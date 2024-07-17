@@ -94,18 +94,18 @@ function disc.SET(state)
     local filename = "New File"
     local extension = ""
 
-    if current_file then
+    local small_image = 'https://raw.githubusercontent.com/crolbar/disc.nvim/master/res/vim.png'
+
+    if #current_file > 0 then
         filename = current_file:match("([^/]+)$")
         extension = current_file:match("^.+(%..+)$")
+        if extension == '.lua' then
+            small_image = 'https://raw.githubusercontent.com/crolbar/disc.nvim/master/res/lua.png'
+        elseif extension == '.rs' then
+            small_image = 'https://raw.githubusercontent.com/crolbar/disc.nvim/master/res/rust.png'
+        end
     end
 
-    local small_image = 'https://raw.githubusercontent.com/crolbar/disc/master/res/vim.png'
-
-    if extension == '.lua' then
-        small_image = 'https://raw.githubusercontent.com/crolbar/disc/master/res/lua.png'
-    elseif extension == '.rs' then
-        small_image = 'https://raw.githubusercontent.com/crolbar/disc//master/res/rust.png'
-    end
 
     disc:set_activity({
         assets = {
