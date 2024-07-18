@@ -3,49 +3,63 @@ local disc = {}
 local struct = require 'disc.deps.struct'
 
 function disc:call(opcode, payload)
-    self.pipe:read_start( function (read_err, chunk)
-        if read_err then
-            print("read err")
-        elseif chunk then
-            print("Connected")
-            --local message = chunk:match("({.+)")
-            --self.decode_json(message, function (_, body)
-            --    print("e: " .. body)
-            --end)
-        end
-    end)
-
-    self.encode_json(payload, function(_, body)
-        local msg = struct.pack('<ii', opcode, #body) .. body
+    self.encode_json(payload, function(_, enc_payload)
+        local msg = struct.pack('<ii', opcode, #enc_payload) .. enc_payload
 
         self.pipe:write(msg, function(write_err)
             if write_err then
-                print("write err")
+                print("Write err: ", write_err)
             else
                 print("wrote msg")
+
+                self.pipe:read_start(function (read_err, read_msg)
+                    if read_err then
+                        print("Read err: " .. read_err)
+                    elseif read_msg then
+                        local message = read_msg:match("({.+)")
+                        self.decode_json(message, function (_, body)
+                            if body.evt == "vim.NIL" then
+                                print("Connected")
+                            elseif body.evt == "ERROR" then
+                                print("Error recieved from discorod: " .. body.data.message)
+                            end
+
+                            if self.callback_activity then
+                                self:call(1, self:get_payload(self.callback_activity))
+                            end
+                        end)
+                    end
+                end)
             end
         end)
     end)
 end
 
-function disc:set_activity(activity)
-    if not self.pipe then
-        self.waiting_activity = { activity = activity }
-    else
-        local payload = {
-            cmd = 'SET_ACTIVITY',
-            nonce = '-',
-            args = {
-                activity = activity,
-                pid = vim.loop:os_getpid()
-            }
+function disc:get_payload(activity)
+    return {
+        cmd = 'SET_ACTIVITY',
+        nonce = '-',
+        args = {
+            activity = activity,
+            pid = vim.loop:os_getpid()
         }
-
-        self:call(1, payload)
-    end
+    }
 end
 
-function disc:setup()
+function disc:update_activity(state)
+    self:call(1,
+        self:get_payload(
+            self:get_activity(state)
+        )
+    )
+end
+
+function disc:connect()
+    if self.pipe then
+        self:disconnect()
+        self.pipe = nil
+    end
+
     local id = "1219918645770059796";
     local socket = "/run/user/1000/discord-ipc-0"
     local pipe = assert(vim.loop.new_pipe(false))
@@ -53,28 +67,28 @@ function disc:setup()
     pipe:connect(socket, function(err)
         if err then
             pipe:close()
+            print("Could not connect with discord ipc. E: " .. err)
         else
             self.pipe = pipe
-
             local payload = {
                 client_id = id,
                 v = 1
             }
 
             self:call(0, payload)
-
-            if self.waiting_activity then
-                self:set_activity(self.waiting_activity.activity)
-            end
         end
     end)
 
-    self.SET("s1")
-    self.SET("s2")
-    self.SET("s3")
+    self.callback_activity = self:get_activity("co")
+end
 
+function disc:setup()
+    self:connect()
 
-    vim.api.nvim_create_user_command('O', 'lua package.loaded.disc.SET("state2")', { nargs = 0 })
+    vim.api.nvim_create_user_command('DiscReConnect', 'lua package.loaded.disc:connect()', { nargs = 0 })
+    vim.api.nvim_create_user_command('DiscDisconnect', 'lua package.loaded.disc:disconnect()', { nargs = 0 })
+    vim.api.nvim_create_user_command('DisUpdate', 'lua package.loaded.disc:update_activity("u")', { nargs = 0 })
+
     vim.api.nvim_create_autocmd('ExitPre', {
         callback = function()
             self:disconnect()
@@ -83,12 +97,12 @@ function disc:setup()
 end
 
 function disc:disconnect()
-    if self.pipe then
+    if self.pipe and not self.pipe:is_closing() then
         self.pipe:close()
     end
 end
 
-function disc.SET(state)
+function disc:get_activity(state)
     local current_file = vim.api.nvim_buf_get_name(0)
 
     local filename = "New File"
@@ -107,7 +121,7 @@ function disc.SET(state)
     end
 
 
-    disc:set_activity({
+    return {
         assets = {
             large_image = 'https://raw.githubusercontent.com/crolbar/yuki/master/imgs/Yuki-v0.1-1.jpg',
             large_text = 'the keyboard',
@@ -129,7 +143,7 @@ function disc.SET(state)
                 url = 'https://github.com/crolbar'
             }
         }
-    })
+    }
 end
 
 function disc.decode_json(t, callback)
