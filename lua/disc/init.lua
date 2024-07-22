@@ -72,7 +72,9 @@ function disc:call(opcode, payload)
             if write_err then
                 print("Write err: ", write_err)
             else
-                print("Wrote msg to Discord.")
+                if self.callback_activity then
+                    print("Wrote msg to Discord.")
+                end
 
                 self.pipe:read_start(function (read_err, read_msg)
                     if read_err then
@@ -83,15 +85,16 @@ function disc:call(opcode, payload)
                         self.decode_json(message, function (_, body)
 
                             if body.evt == vim.NIL then
-                                print("Connected to Discord.")
+                                if self.callback_activity then
+                                    self:update_activity()
+                                    self.callback_activity = nil;
+
+                                    print("Connected to Discord.")
+                                end
                             elseif body.evt == "ERROR" then
                                 print("Error recieved from discorod: " .. body.data.message)
                             end
 
-                            if self.callback_activity then
-                                self:update_activity()
-                                self.callback_activity = nil;
-                            end
                         end)
                     end
                 end)
@@ -132,6 +135,9 @@ function disc:connect()
     pipe:connect(socket, function(err)
         if err then
             pipe:close()
+            if self.timer then
+                self.timer:stop()
+            end
             print("Could not connect with discord ipc. E: " .. err)
         else
             self.pipe = pipe
@@ -150,7 +156,9 @@ function disc:connect()
     self.timer = vim.loop.new_timer()
     self.timer:start(0, self.config.timeout, vim.schedule_wrap(
         function()
-            self:update_activity()
+            if self.pipe then
+                self:update_activity()
+            end
         end)
     )
 end
