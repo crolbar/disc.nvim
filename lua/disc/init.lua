@@ -1,5 +1,13 @@
 local disc = {}
 
+
+local default_config = {
+    timeout = 1500,
+
+    large_image_text = "the keyboard",
+    small_image_text = "the lang",
+}
+
 local struct = require 'disc.deps.struct'
 
 function disc:call(opcode, payload)
@@ -10,22 +18,24 @@ function disc:call(opcode, payload)
             if write_err then
                 print("Write err: ", write_err)
             else
-                print("wrote msg")
+                print("Wrote msg to Discord.")
 
                 self.pipe:read_start(function (read_err, read_msg)
                     if read_err then
                         print("Read err: " .. read_err)
                     elseif read_msg then
                         local message = read_msg:match("({.+)")
+
                         self.decode_json(message, function (_, body)
-                            if body.evt == "vim.NIL" then
-                                print("Connected")
+
+                            if body.evt == vim.NIL then
+                                print("Connected to Discord.")
                             elseif body.evt == "ERROR" then
                                 print("Error recieved from discorod: " .. body.data.message)
                             end
 
                             if self.callback_activity then
-                                self:call(1, self:get_payload(self.callback_activity))
+                                self:update_activity()
                                 self.callback_activity = nil;
                             end
                         end)
@@ -47,10 +57,10 @@ function disc:get_payload(activity)
     }
 end
 
-function disc:update_activity(state)
+function disc:update_activity()
     self:call(1,
         self:get_payload(
-            self:get_activity(state)
+            self.callback_activity or self:get_activity()
         )
     )
 end
@@ -80,15 +90,24 @@ function disc:connect()
         end
     end)
 
-    self.callback_activity = self:get_activity("co")
+    self.start_time = os.time()
+    self.callback_activity = self:get_activity()
+
+    self.timer = vim.loop.new_timer()
+    self.timer:start(0, self.config.timeout, vim.schedule_wrap(
+        function()
+            self:update_activity()
+        end)
+    )
 end
 
-function disc:setup()
+function disc:setup(user_config)
+    self.config = vim.tbl_deep_extend("force", default_config, user_config or {})
+
     self:connect()
 
-    vim.api.nvim_create_user_command('DiscReConnect', 'lua package.loaded.disc:connect()', { nargs = 0 })
+    vim.api.nvim_create_user_command('DiscReconnect', 'lua package.loaded.disc:connect()', { nargs = 0 })
     vim.api.nvim_create_user_command('DiscDisconnect', 'lua package.loaded.disc:disconnect()', { nargs = 0 })
-    vim.api.nvim_create_user_command('DisUpdate', 'lua package.loaded.disc:update_activity("u")', { nargs = 0 })
 
     vim.api.nvim_create_autocmd('ExitPre', {
         callback = function()
@@ -99,11 +118,13 @@ end
 
 function disc:disconnect()
     if self.pipe and not self.pipe:is_closing() then
+        self.timer:stop()
         self.pipe:close()
     end
 end
 
-function disc:get_activity(state)
+function disc:get_activity()
+    local cursor = vim.api.nvim_win_get_cursor(0)
     local current_file = vim.api.nvim_buf_get_name(0)
 
     local filename = "New File"
@@ -125,14 +146,14 @@ function disc:get_activity(state)
     return {
         assets = {
             large_image = 'https://raw.githubusercontent.com/crolbar/yuki/master/imgs/Yuki-v0.1-1.jpg',
-            large_text = 'the keyboard',
+            large_text = self.config.large_image_text,
             small_image = small_image,
-            small_text = 'the lang'
+            small_text = self.config.small_image_text,
         },
-        details = "In " .. filename,
-        state = state,
+        details = "In " .. "yourmom",
+        state = "Editing: `" .. filename .. "` at: " .. cursor[1] .. ":" .. cursor[2]+1,
         timestamps = {
-            start = os.time(),
+            start = self.start_time,
         },
         buttons = {
             {
@@ -148,23 +169,19 @@ function disc:get_activity(state)
 end
 
 function disc.decode_json(t, callback)
-    vim.schedule(function()
-        callback(
-            pcall(function()
-                return vim.fn.json_decode(t)
-            end)
-        )
-    end)
+    vim.schedule(function()callback(
+        pcall(function()
+            return vim.fn.json_decode(t)
+        end)
+    )end)
 end
 
 function disc.encode_json(t, callback)
-    vim.schedule(function()
-        callback(
-            pcall(function()
-                return vim.fn.json_encode(t)
-            end)
-        )
-    end)
+    vim.schedule(function()callback(
+        pcall(function()
+            return vim.fn.json_encode(t)
+        end)
+    )end)
 end
 
 return disc
