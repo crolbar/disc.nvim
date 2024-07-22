@@ -26,6 +26,7 @@ function disc:call(opcode, payload)
 
                             if self.callback_activity then
                                 self:call(1, self:get_payload(self.callback_activity))
+                                self.callback_activity = nil;
                             end
                         end)
                     end
