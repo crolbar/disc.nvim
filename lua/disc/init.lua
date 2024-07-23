@@ -143,14 +143,18 @@ function disc:get_activity()
     local small_image = nil
 
     if #curr_file > 0 then
-        filename = curr_file:match("([^/]+)$")
-        local extension = curr_file:match("^.+(%..+)$")
-        if extension == '.lua' then
-            small_image = 'https://raw.githubusercontent.com/crolbar/disc.nvim/master/res/lua.png'
-        elseif extension == '.rs' then
-            small_image = 'https://raw.githubusercontent.com/crolbar/disc.nvim/master/res/rust.png'
+        if string.match(curr_file, "^oil://") then
+            filename = "Oil"
         else
-            small_image = 'https://raw.githubusercontent.com/crolbar/disc.nvim/master/res/vim.png'
+            filename = curr_file:match("([^/]+)$")
+            local extension = curr_file:match("^.+(%..+)$")
+            if extension == '.lua' then
+                small_image = 'https://raw.githubusercontent.com/crolbar/disc.nvim/master/res/lua.png'
+            elseif extension == '.rs' then
+                small_image = 'https://raw.githubusercontent.com/crolbar/disc.nvim/master/res/rust.png'
+            else
+                small_image = 'https://raw.githubusercontent.com/crolbar/disc.nvim/master/res/vim.png'
+            end
         end
     end
 
