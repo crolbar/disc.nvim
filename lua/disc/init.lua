@@ -150,6 +150,8 @@ function disc:get_activity()
             local extension = curr_file:match("^.+(%..+)$")
             if extension == '.lua' then
                 small_image = 'https://raw.githubusercontent.com/crolbar/disc.nvim/master/res/lua.png'
+            elseif extension == '.nix' then
+                small_image = 'https://raw.githubusercontent.com/crolbar/disc.nvim/master/res/nix.png'
             elseif extension == '.rs' then
                 small_image = 'https://raw.githubusercontent.com/crolbar/disc.nvim/master/res/rust.png'
             else
