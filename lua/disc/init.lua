@@ -3,8 +3,10 @@ local disc = {}
 local default_config = {
     timeout = 1500,
 
-    large_image_text = "the keyboard",
-    small_image_text = "the lang",
+    large_image = nil,
+    large_image_text = "Vim btw",
+    small_image = nil,
+    small_image_text = "The language",
 }
 
 function disc:call(opcode, payload)
@@ -131,47 +133,59 @@ end
 
 function disc:get_activity()
     local cursor = vim.api.nvim_win_get_cursor(0)
-    local current_file = vim.api.nvim_buf_get_name(0)
+    local curr_file = vim.api.nvim_buf_get_name(0)
+    local curr_dir = vim.fn.getcwd()
 
     local filename = "New File"
-    local extension = ""
+    local repo_name = curr_dir:match("([^/]+)$")
 
-    local small_image = 'https://raw.githubusercontent.com/crolbar/disc.nvim/master/res/vim.png'
+    local default_image = 'https://raw.githubusercontent.com/crolbar/disc.nvim/master/res/vim.png'
+    local small_image = nil
 
-    if #current_file > 0 then
-        filename = current_file:match("([^/]+)$")
-        extension = current_file:match("^.+(%..+)$")
+    if #curr_file > 0 then
+        filename = curr_file:match("([^/]+)$")
+        local extension = curr_file:match("^.+(%..+)$")
         if extension == '.lua' then
             small_image = 'https://raw.githubusercontent.com/crolbar/disc.nvim/master/res/lua.png'
         elseif extension == '.rs' then
             small_image = 'https://raw.githubusercontent.com/crolbar/disc.nvim/master/res/rust.png'
+        else
+            small_image = 'https://raw.githubusercontent.com/crolbar/disc.nvim/master/res/vim.png'
         end
     end
 
 
-    return {
-        assets = {
-            large_image = 'https://raw.githubusercontent.com/crolbar/yuki/master/imgs/Yuki-v0.1-1.jpg',
-            large_text = self.config.large_image_text,
-            small_image = small_image,
-            small_text = self.config.small_image_text,
-        },
-        details = "In " .. "yourmom",
+    local activity = {
+        details = "In " .. repo_name,
         state = "Editing: `" .. filename .. "` at: " .. cursor[1] .. ":" .. cursor[2]+1,
         timestamps = {
             start = self.start_time,
         },
-        buttons = {
-            {
-                label = 'the keyboard',
-                url = 'https://github.com/crolbar/yuki'
-            },
-            {
-                label = 'this dumbass',
-                url = 'https://github.com/crolbar'
-            }
+        assets = {
+            large_image = self.config.large_image or default_image,
+            large_text = self.config.large_image_text
         }
     }
+
+    if small_image then
+        activity.assets.small_image = self.config.small_image or small_image
+        activity.assets.small_text = self.config.small_image_text
+    end
+
+    local cmd = "cd " .. curr_dir:gsub("\"", "\\\"") .. " && " .. "git config --get remote.origin.url"
+    local repo_url = vim.trim(vim.fn.system(cmd));
+    if repo_url and #repo_url > 0 then
+        activity.detail = "In " .. repo_url:match("([^/]+)$")
+
+        activity.buttons = {
+            {
+                label = 'Repository',
+                url = repo_url
+            }
+        }
+    end
+
+    return activity
 end
 
 function disc.decode_json(t, callback)

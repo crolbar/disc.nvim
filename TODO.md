@@ -1,5 +1,6 @@
 - [x] cursor pos
-- [ ] repo name && repo url under button
+- [x] repo name && repo url under button
 - [ ] lang detect more + icons
+- [ ] more conf
 - [x] uptade
 - [x] user commands (connect, disconnect, reconnect)
