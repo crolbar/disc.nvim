@@ -257,6 +257,8 @@ function disc:get_activity()
                 }
             }
         end
+    else
+        activity.buttons = self.config.buttons;
     end
 
     return activity
