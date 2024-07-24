@@ -35,6 +35,7 @@ function disc:call(opcode, payload)
 
         self.pipe:write(msg, function(write_err)
             if write_err then
+                self:disconnect()
                 print("Write err: ", write_err)
             else
                 if self.callback_activity then
@@ -43,6 +44,7 @@ function disc:call(opcode, payload)
 
                 self.pipe:read_start(function (read_err, read_msg)
                     if read_err then
+                        self:disconnect()
                         print("Read err: " .. read_err)
                     elseif read_msg then
                         local message = read_msg:match("({.+)")
@@ -57,6 +59,7 @@ function disc:call(opcode, payload)
                                     print("Connected to Discord.")
                                 end
                             elseif body.evt == "ERROR" then
+                                self:disconnect()
                                 print("Error recieved from discorod: " .. body.data.message)
                             end
 
