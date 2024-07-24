@@ -146,7 +146,13 @@ local function get_img_txt(filename, extension)
         img_name = "git"
         txt = filename
     elseif img_name then
-        txt = img_name
+        if img_name == "c" then
+            txt = "clang"
+        elseif img_name == "r" then
+            txt = "r "
+        else
+            txt = img_name
+        end
     else
         img_name = 'text'
         txt = extension or 'text'
@@ -204,7 +210,7 @@ function disc:get_activity()
     local cmd = "cd " .. curr_dir:gsub("\"", "\\\"") .. " && " .. "git config --get remote.origin.url"
     local repo_url = vim.trim(vim.fn.system(cmd));
     if repo_url and #repo_url > 0 then
-        activity.detail = "In " .. repo_url:match("([^/]+)$")
+        activity.details = "In " .. repo_url:match("([^/]+)$")
 
         activity.buttons = {
             {
