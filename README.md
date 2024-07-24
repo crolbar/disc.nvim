@@ -9,28 +9,28 @@ require("disc").setup()
 ## Config Example:
 
 ```lua
-    require("disc").setup({
-        timeout = 3000,
+require("disc").setup({
+    timeout = 3000,
 
-        details = "some details",
-        state = "some state",
+    details = "some details",
+    state = "some state",
 
-        large_image_text = "large image",
-        large_image = "https://large_image.com", -- should be valid img
-        small_image_text = "small image",
-        small_image = "https://small_image.com",
+    large_image_text = "large image",
+    large_image = "https://large_image.com", -- should be valid img
+    small_image_text = "small image",
+    small_image = "https://small_image.com",
 
-        buttons = {
-            {
-                label = "label on first button",
-                url = "https://example.com"
-            },
-            {
-                label = "label on second button",
-                url = "https://example.com"
-            }
+    buttons = {
+        {
+            label = "label on first button",
+            url = "https://example.com"
+        },
+        {
+            label = "label on second button",
+            url = "https://example.com"
         }
-    })
+    }
+})
 ```
 
 ## Commands
