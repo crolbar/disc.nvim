@@ -132,17 +132,17 @@ function disc:connect()
     )
 end
 
-function disc:setup(user_config)
-    self.config = vim.tbl_deep_extend("force", default_config, user_config or {})
+function disc.setup(user_config)
+    disc.config = vim.tbl_deep_extend("force", default_config, user_config or {})
 
-    self:connect()
+    disc:connect()
 
     vim.api.nvim_create_user_command('DiscReconnect', 'lua package.loaded.disc:connect()', { nargs = 0 })
     vim.api.nvim_create_user_command('DiscDisconnect', 'lua package.loaded.disc:disconnect()', { nargs = 0 })
 
     vim.api.nvim_create_autocmd('ExitPre', {
         callback = function()
-            self:disconnect()
+            disc:disconnect()
         end
     })
 end
@@ -175,7 +175,7 @@ local function get_img_txt(filename, extension)
         end
     else
         img_name = 'text'
-        txt = extension or 'text'
+        txt = filename or 'text'
     end
 
     return {
