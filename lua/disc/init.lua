@@ -8,7 +8,7 @@ local default_config = {
     large_image = nil,
     large_image_text = "Vim btw",
     small_image = nil,
-    small_image_text = "The language",
+    small_image_text = nil,
 }
 
 function disc:call(opcode, payload)
@@ -134,6 +134,31 @@ function disc:disconnect()
     end
 end
 
+local function get_img_txt(filename, extension)
+    local extensions = { [".ino"] = "arduino", [".rs"] = "rust", [".c"] = "c", [".h"] = "c", [".cpp"] = "cpp", [".hpp"] = "cpp", [".cs"] = "c_sharp", [".css"] = "css", [".toml"] = "toml", [".go"] = "go", [".hs"] = "haskell", [".html"] = "html", [".java"] = "java", [".js"] = "javascript", [".json"] = "json", [".lua"] = "lua", [".md"] = "markdown", [".nix"] = "nix", [".ml"] = "ocaml", [".php"] = "php", [".py"] = "python", [".r"] = "r", [".rust"] = "rust", [".sass"] = "sass", [".sh"] = "shell", [".ts"] = "typescript", [".vim"] = "vim", [".wasm"] = "webassembly", [".zig"] = "zig", }
+
+    local img_name = extensions[extension]
+    local txt = nil
+    if extension == '.toml' and filename == 'Cargo.toml' then
+        img_name = 'cargo'
+        txt = 'cargo'
+    elseif string.match(filename, "git") then
+        img_name = "git"
+        txt = filename
+    elseif img_name then
+        txt = img_name
+    else
+        img_name = 'text'
+        txt = extension or 'text'
+    end
+
+    return {
+        img = string.format('https://raw.githubusercontent.com/crolbar/disc.nvim/master/res/%s.png', img_name),
+        txt = txt or 'text'
+    }
+end
+
+
 function disc:get_activity()
     local cursor = vim.api.nvim_win_get_cursor(0)
     local curr_file = vim.api.nvim_buf_get_name(0)
@@ -144,6 +169,7 @@ function disc:get_activity()
 
     local default_image = 'https://raw.githubusercontent.com/crolbar/disc.nvim/master/res/vim.png'
     local small_image = nil
+    local small_image_text = nil
 
     if #curr_file > 0 then
         if string.match(curr_file, "^oil://") then
@@ -151,15 +177,9 @@ function disc:get_activity()
         else
             filename = curr_file:match("([^/]+)$")
             local extension = curr_file:match("^.+(%..+)$")
-            if extension == '.lua' then
-                small_image = 'https://raw.githubusercontent.com/crolbar/disc.nvim/master/res/lua.png'
-            elseif extension == '.nix' then
-                small_image = 'https://raw.githubusercontent.com/crolbar/disc.nvim/master/res/nix.png'
-            elseif extension == '.rs' then
-                small_image = 'https://raw.githubusercontent.com/crolbar/disc.nvim/master/res/rust.png'
-            else
-                small_image = 'https://raw.githubusercontent.com/crolbar/disc.nvim/master/res/vim.png'
-            end
+            local un = get_img_txt(filename, extension)
+            small_image = un.img
+            small_image_text = un.txt
         end
     end
 
@@ -178,7 +198,7 @@ function disc:get_activity()
 
     if small_image then
         activity.assets.small_image = self.config.small_image or small_image
-        activity.assets.small_text = self.config.small_image_text
+        activity.assets.small_text = self.config.small_image_text or small_image_text
     end
 
     local cmd = "cd " .. curr_dir:gsub("\"", "\\\"") .. " && " .. "git config --get remote.origin.url"
