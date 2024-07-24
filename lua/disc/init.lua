@@ -3,12 +3,29 @@ local disc = {}
 CLIENT_ID = "1219918645770059796";
 
 local default_config = {
-    timeout = 1500,
+    timeout = 2000,                 -- num - how much time between updates
 
-    large_image = nil,
-    large_image_text = "Vim btw",
-    small_image = nil,
-    small_image_text = nil,
+    details = nil,                  -- string 
+    state = nil,                    -- string
+
+    large_image = nil,              -- url
+    large_image_text = "Vim btw",   -- string
+    small_image = nil,              -- url
+    small_image_text = nil,         -- stirng
+    buttons = nil,
+    -- if one will show two the default (show repo) and the specified one
+    -- if two will overwrite the default
+    -- exampl:
+    --buttons = {
+    --    {
+    --        label = "first",
+    --        url = "https://crolbar.com/"
+    --    },
+    --    {
+    --        label = "sec",
+    --        url = "https://crolbar.com/"
+    --    }
+    --}
 }
 
 function disc:call(opcode, payload)
@@ -190,9 +207,11 @@ function disc:get_activity()
     end
 
 
+    local state = string.format([[Editing: `%s` at: %d:%d]], filename, cursor[1], cursor[2]+1)
+
     local activity = {
-        details = "In " .. repo_name,
-        state = "Editing: `" .. filename .. "` at: " .. cursor[1] .. ":" .. cursor[2]+1,
+        details = self.config.details or ("In " .. repo_name),
+        state = self.config.state or state,
         timestamps = {
             start = self.start_time,
         },
@@ -210,14 +229,31 @@ function disc:get_activity()
     local cmd = "cd " .. curr_dir:gsub("\"", "\\\"") .. " && " .. "git config --get remote.origin.url"
     local repo_url = vim.trim(vim.fn.system(cmd));
     if repo_url and #repo_url > 0 then
-        activity.details = "In " .. repo_url:match("([^/]+)$")
+        activity.details = self.config.details or ("In " .. repo_url:match("([^/]+)$"))
 
-        activity.buttons = {
-            {
-                label = 'Repository',
-                url = repo_url
+        if self.config.buttons then
+            if #self.config.buttons == 2 then
+                activity.buttons = self.config.buttons
+            elseif #self.config.buttons == 1 then
+                activity.buttons = {
+                    {
+                        label = 'Repository',
+                        url = repo_url
+                    },
+                    {
+                        label = self.config.buttons[1].label,
+                        url = self.config.buttons[1].url
+                    }
+                }
+            end
+        else
+            activity.buttons = self.config.buttons or {
+                {
+                    label = 'Repository',
+                    url = repo_url
+                }
             }
-        }
+        end
     end
 
     return activity
