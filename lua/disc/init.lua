@@ -1,5 +1,7 @@
 local disc = {}
 
+CLIENT_ID = "1219918645770059796";
+
 local default_config = {
     timeout = 1500,
 
@@ -74,8 +76,9 @@ function disc:connect()
         self.pipe = nil
     end
 
-    local id = "1219918645770059796";
-    local socket = "/run/user/1000/discord-ipc-0"
+    local cmd = "ss -lx | grep -o '[^ ]*discord[^ ]*' | head -n 1"
+    local socket = vim.trim(vim.fn.system(cmd));
+
     local pipe = assert(vim.loop.new_pipe(false))
 
     pipe:connect(socket, function(err)
@@ -88,7 +91,7 @@ function disc:connect()
         else
             self.pipe = pipe
             local payload = {
-                client_id = id,
+                client_id = CLIENT_ID,
                 v = 1
             }
 
