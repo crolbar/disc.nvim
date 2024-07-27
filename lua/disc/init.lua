@@ -5,6 +5,8 @@ CLIENT_ID = "1219918645770059796";
 local default_config = {
     timeout = 2000,                 -- num - how much time between updates
 
+    client_id = nil,                -- string
+
     details = nil,                  -- string 
     state = nil,                    -- string
 
@@ -111,7 +113,7 @@ function disc:connect()
         else
             self.pipe = pipe
             local payload = {
-                client_id = CLIENT_ID,
+                client_id = self.config.client_id or CLIENT_ID,
                 v = 1
             }
 

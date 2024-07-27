@@ -12,6 +12,8 @@ require("disc").setup()
 require("disc").setup({
     timeout = 3000,
 
+    client_id = "1219918645770059796", -- discord application id
+
     details = "some details",
     state = "some state",
 
