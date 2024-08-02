@@ -203,11 +203,14 @@ function disc:get_activity()
         if string.match(curr_file, "^oil://") then
             filename = "Oil"
         else
-            filename = curr_file:match("([^/]+)$")
-            local extension = curr_file:match("^.+(%..+)$")
-            local un = get_img_txt(filename, extension)
-            small_image = un.img
-            small_image_text = un.txt
+            local tmp_filename = curr_file:match("([^/]+)$")
+            if tmp_filename and #tmp_filename > 0 then
+                filename = tmp_filename
+                local extension = curr_file:match("^.+(%..+)$")
+                local un = get_img_txt(filename, extension)
+                small_image = un.img
+                small_image_text = un.txt
+            end
         end
     end
 
