@@ -218,7 +218,7 @@ function disc:get_activity()
     local state = string.format([[Editing: `%s` at: %d:%d]], filename, cursor[1], cursor[2]+1)
 
     local activity = {
-        details = self.config.details or ("In " .. repo_name),
+        details = self.config.details or ("In " .. (repo_name or "a file")),
         state = self.config.state or state,
         timestamps = {
             start = self.start_time,
